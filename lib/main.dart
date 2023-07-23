@@ -68,6 +68,37 @@ class ChatPage extends StatelessWidget {
               }),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.add),
+        onPressed: () async {
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) {
+                return AddChatPage();
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class AddChatPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('チャット投稿'),
+      ),
+      body: Center(
+        child: ElevatedButton(
+          child: Text('戻る'),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
+      ),
     );
   }
 }
