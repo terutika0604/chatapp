@@ -27,8 +27,11 @@ class ChatApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Chat App',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+        // colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        // useMaterial3: true,
+
+        // テーマカラー
+        primarySwatch: Colors.blue,
       ),
       home: LoginPage(),
     );
@@ -40,12 +43,15 @@ class LoginPage extends StatefulWidget {
   _LoginPageState createState() => _LoginPageState();
 }
 
+// クラス名の頭に＿を書くと他のクラスからアクセスできないようになる
+// LoginPageの処理部分を分けるイメージ
 class _LoginPageState extends State<LoginPage> {
   // メッセージ表示用
   String infoText = '';
   // 入力したメールアドレス・パスワード
   String email = '';
   String password = '';
+  // String? password = ''; とするとnullを許容する変数になる
 
   @override
   // Stateが更新されるとBuild関数が再実行される
@@ -81,6 +87,7 @@ class _LoginPageState extends State<LoginPage> {
                 padding: EdgeInsets.all(8),
                 child: Text(infoText),
               ),
+              // ユーザー登録ボタン
               Container(
                 width: double.infinity,
                 // ユーザー登録ボタンUI
@@ -90,7 +97,7 @@ class _LoginPageState extends State<LoginPage> {
                     try {
                       // メール/パスワードでユーザー登録
                       final FirebaseAuth auth = FirebaseAuth.instance;
-                      await auth.createUserWithEmailAndPassword(
+                      final result = await auth.createUserWithEmailAndPassword(
                         email: email,
                         password: password,
                       );
@@ -98,13 +105,43 @@ class _LoginPageState extends State<LoginPage> {
                       // チャット画面に遷移＋ログイン画面を破棄
                       await Navigator.of(context).pushReplacement(
                         MaterialPageRoute(builder: (context) {
-                          return ChatPage();
+                          return ChatPage(result.user!);
                         }),
                       );
                     } catch (e) {
                       // ユーザー登録に失敗した場合
                       setState(() {
                         infoText = '登録に失敗しました：${e.toString()}';
+                      });
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+              // ログインボタン
+              Container(
+                width: double.infinity,
+                child: OutlinedButton(
+                  child: Text('ログイン'),
+                  onPressed: () async {
+                    try {
+                      // メール/パスワードでログイン
+                      final FirebaseAuth auth = FirebaseAuth.instance;
+                      final result = await auth.signInWithEmailAndPassword(
+                        email: email,
+                        password: password,
+                      );
+                      // ログインに成功した場合
+                      // チャット画面に遷移＋ログイン画面を破棄
+                      await Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(builder: (context) {
+                          return ChatPage(result.user!);
+                        }),
+                      );
+                    } catch (e) {
+                      // ログインに失敗した場合
+                      setState(() {
+                        infoText = "ログインに失敗しました：${e.toString()}";
                       });
                     }
                   },
@@ -119,6 +156,11 @@ class _LoginPageState extends State<LoginPage> {
 }
 
 class ChatPage extends StatelessWidget {
+  // 引数からユーザー情報を受け取れるようにする(コンストラクタ)
+  ChatPage(this.user);
+  // ユーザー情報
+  final User user;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -128,6 +170,11 @@ class ChatPage extends StatelessWidget {
           IconButton(
               icon: Icon(Icons.close),
               onPressed: () async {
+                // ログアウト処理
+                // 内部で保持しているログイン情報等が初期化される
+                // ログアウト時はこの処理を呼び出せばOKらしい
+                await FirebaseAuth.instance.signOut();
+                // ログイン画面に遷移＋チャット画面を破棄
                 await Navigator.of(context).pushReplacement(
                   MaterialPageRoute(
                     builder: (context) {
@@ -137,6 +184,9 @@ class ChatPage extends StatelessWidget {
                 );
               }),
         ],
+      ),
+      body: Center(
+        child: Text('ログイン情報：${user.email}'),
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
