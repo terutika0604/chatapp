@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'firebase_options.dart';
 // コア プラグイン
 import 'package:firebase_core/firebase_core.dart';
+// firestore　プラグイン
+import 'package:cloud_firestore/cloud_firestore.dart';
 // 認証系　プラグイン
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -194,7 +196,7 @@ class ChatPage extends StatelessWidget {
           await Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) {
-                return AddChatPage();
+                return AddPostPage(user);
               },
             ),
           );
@@ -204,7 +206,17 @@ class ChatPage extends StatelessWidget {
   }
 }
 
-class AddChatPage extends StatelessWidget {
+class AddPostPage extends StatefulWidget {
+  AddPostPage(this.user);
+  final User user;
+
+  @override
+  _AddPostPageState createState() => _AddPostPageState();
+}
+
+class _AddPostPageState extends State<AddPostPage> {
+  String messageText = '';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -212,11 +224,50 @@ class AddChatPage extends StatelessWidget {
         title: Text('チャット投稿'),
       ),
       body: Center(
-        child: ElevatedButton(
-          child: Text('戻る'),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
+        child: Container(
+          padding: EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // 投稿メッセージ入力
+              TextFormField(
+                decoration: InputDecoration(labelText: '投稿メッセージ'),
+                // 複数行入力許可
+                keyboardType: TextInputType.multiline,
+                maxLines: 3,
+                onChanged: (String value) {
+                  setState(() {
+                    messageText = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                // 投稿ボタン
+                child: ElevatedButton(
+                  child: Text('投稿'),
+                  onPressed: () async {
+                    // 現在の日付
+                    final date = DateTime.now().toLocal().toIso8601String();
+                    final email = widget.user.email;
+
+                    // メッセージをFirestoreに保存
+                    await FirebaseFirestore.instance
+                        .collection('posts') //　コレクションID指定
+                        .doc() // ドキュメントID指定
+                        .set({
+                      'text': messageText,
+                      'email': email,
+                      'date': date,
+                    });
+                    // 1つ前の画面に戻る
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
