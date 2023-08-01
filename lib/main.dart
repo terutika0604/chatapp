@@ -40,6 +40,7 @@ class ChatApp extends StatelessWidget {
   }
 }
 
+// ログインページ
 class LoginPage extends StatefulWidget {
   @override
   _LoginPageState createState() => _LoginPageState();
@@ -157,6 +158,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
+// チャット一覧ページ
 class ChatPage extends StatelessWidget {
   // 引数からユーザー情報を受け取れるようにする(コンストラクタ)
   ChatPage(this.user);
@@ -187,8 +189,46 @@ class ChatPage extends StatelessWidget {
               }),
         ],
       ),
-      body: Center(
-        child: Text('ログイン情報：${user.email}'),
+      body: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.all(8),
+            child: Text('ログイン情報：${user.email}'),
+          ),
+          Expanded(
+            // FutureBuilder
+            // 非同期処理の結果を元にWidgetを作れる
+            child: FutureBuilder(
+              // 投稿メッセージ一覧を取得（非同期処理）
+              // 投稿日時でソート
+              future: FirebaseFirestore.instance
+                  .collection('posts')
+                  .orderBy('date')
+                  .get(),
+              builder: (context, snapshot) {
+                // データが取得できた場合
+                if (snapshot.hasData) {
+                  final List<DocumentSnapshot> documents = snapshot.data!.docs;
+                  // 取得した投稿メッセージ一覧を元にリスト表示
+                  return ListView(
+                    children: documents.map((document) {
+                      return Card(
+                        child: ListTile(
+                          title: Text(document['text']),
+                          subtitle: Text(document['email']),
+                        ),
+                      );
+                    }).toList(),
+                  );
+                }
+                // データが読込中の場合
+                return Center(
+                  child: Text('読込中...'),
+                );
+              },
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
@@ -206,6 +246,7 @@ class ChatPage extends StatelessWidget {
   }
 }
 
+// 投稿ページ
 class AddPostPage extends StatefulWidget {
   AddPostPage(this.user);
   final User user;
